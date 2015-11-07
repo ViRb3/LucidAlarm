@@ -12,6 +12,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Timer;
 
@@ -62,7 +63,14 @@ public class SampleSchedulingService extends IntentService {
 
     public static void PlayAlarm(Context context, int duration)
     {
-        Uri alarm = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        SharedPreferences settings = context.getSharedPreferences("PREFERENCES", 0);
+        String alarmPath = settings.getString("alarmPath", "");
+
+        if (!new File(alarmPath).exists())
+            alarmPath = "";
+
+        Uri alarm = alarmPath.equals("") ? RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) :
+                Uri.fromFile(new File(alarmPath));
 
         if (MediaPlayer != null && MediaPlayer.isPlaying())
             MediaPlayer.stop();

@@ -1,8 +1,13 @@
 package com.virb3.lucidalarm;
 
+import android.Manifest;
 import android.app.DialogFragment;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
@@ -18,6 +23,8 @@ import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -189,9 +196,61 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View v)
             {
-                //TODO
+                int readPermission = ContextCompat.checkSelfPermission(MainActivity.this,
+                        Manifest.permission.READ_EXTERNAL_STORAGE);
+
+                int writePermission = ContextCompat.checkSelfPermission(MainActivity.this,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+                if (readPermission != PackageManager.PERMISSION_GRANTED || writePermission != PackageManager.PERMISSION_GRANTED)
+                {
+                    ActivityCompat.requestPermissions(MainActivity.this,
+                            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+                    return;
+                }
+
+                DialogChooseDirectory.Result result = new DialogChooseDirectory.Result()
+                {
+
+                    @Override
+                    public void onChooseFile(File file)
+                    {
+                        SharedPreferences settings = getSharedPreferences("PREFERENCES", 0);
+                        SharedPreferences.Editor editor = settings.edit();
+
+                        editor.putString("alarmPath", file.getPath());
+                        editor.apply();
+
+                        TextView alarmPath = (TextView) findViewById(R.id.txtCurrentAlarmSoundPath);
+                        alarmPath.setText(file.getPath());
+                    }
+                };
+
+                new DialogChooseDirectory(MainActivity.this, result, null);
             }
         });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults)
+    {
+        switch (requestCode)
+        {
+            case 0:
+                if (grantResults.length != 2)
+                    return;
+
+                if (grantResults[0] != PackageManager.PERMISSION_GRANTED)
+                    return;
+
+                if (grantResults[1] != PackageManager.PERMISSION_GRANTED)
+                    return;
+
+                Button btnSelect = (Button) findViewById(R.id.btnCurrentAlarmSelect);
+                btnSelect.callOnClick();
+
+                break;
+        }
     }
 
     private void StartAlarm()
@@ -199,7 +258,7 @@ public class MainActivity extends AppCompatActivity
         int currentMinutes = Minutes;
         int currentSeconds = 0;
 
-        for(int i = 1; i <= RingCount(); i++)
+        for (int i = 1; i <= RingCount(); i++)
         {
             alarm.SetAlarm(this, Hours, currentMinutes, currentSeconds, i);
             currentSeconds += RingInterval() + RingDuration();
@@ -232,6 +291,14 @@ public class MainActivity extends AppCompatActivity
         _editRingCount.setText(String.valueOf(settings.getInt("ringCount", 3)));
         _editRingDuration.setText(String.valueOf(settings.getInt("ringDuration", 4)));
         _editRingInterval.setText(String.valueOf(settings.getInt("ringInterval", 10)));
+
+        TextView txtAlarmPath = (TextView) findViewById(R.id.txtCurrentAlarmSoundPath);
+        String alarmPath = settings.getString("alarmPath", "");
+
+        if (!new File(alarmPath).exists())
+            alarmPath = "";
+
+        txtAlarmPath.setText(alarmPath.equals("") ? "none" : alarmPath);
     }
 
     public void Save()
