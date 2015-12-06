@@ -1,2 +1,2 @@
 # LucidAlarm
-An alarm designed for lucid dreams
+An alarm that can briefly wake you up at given intervals
