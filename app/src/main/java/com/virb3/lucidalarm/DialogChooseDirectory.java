@@ -13,6 +13,7 @@ import android.widget.TextView;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -26,6 +27,7 @@ public class DialogChooseDirectory implements AdapterView.OnItemClickListener, D
 
     AlertDialog _alertDialog;
     List<File> _fileEntries = new ArrayList<>();
+    List<String> _allowedExtensions = Arrays.asList("mp3", "ogg", "wav");
     File _currentDirectory;
     Context _context;
     ListView _listView;
@@ -68,7 +70,7 @@ public class DialogChooseDirectory implements AdapterView.OnItemClickListener, D
 
                     String extension = file.getName().substring(file.getName().lastIndexOf(".") + 1, file.getName().length());
 
-                    if (!extension.equals("mp3") && !extension.equals("ogg"))
+                    if (!_allowedExtensions.contains(extension))
                         continue;
                 }
 
