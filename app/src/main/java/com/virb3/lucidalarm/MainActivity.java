@@ -5,7 +5,6 @@ import android.app.DialogFragment;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -24,41 +23,12 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
 {
-    SampleAlarmReceiver alarm = new SampleAlarmReceiver();
-
-    public boolean Enabled()
-    {
-        return _chkEnable.isChecked();
-    }
-
-    public int Hours;
-    public int Minutes;
-
-    public String AlarmSoundPath()
-    {
-        return _txtCurrentAlarmSoundPath.getText().toString();
-    }
-
-    public int RingCount()
-    {
-        return Integer.parseInt(_editRingCount.getText().toString());
-    }
-
-    public int RingDuration()
-    {
-        return Integer.parseInt(_editRingDuration.getText().toString());
-    }
-
-    public int RingInterval()
-    {
-        return Integer.parseInt(_editRingInterval.getText().toString());
-    }
+    private AlarmReceiver _alarmReceiver = new AlarmReceiver();
 
     private CheckBox _chkEnable;
     private TextView _txtAlarmTimeActual;
@@ -83,6 +53,8 @@ public class MainActivity extends AppCompatActivity
         _editRingDuration = (EditText) findViewById(R.id.editRingDuration);
         _editRingInterval = (EditText) findViewById(R.id.editRingInterval);
 
+        Settings.Initialize(this);
+
         Load();
 
         SetupEnableCheckbox();
@@ -105,7 +77,7 @@ public class MainActivity extends AppCompatActivity
         switch (item.getItemId())
         {
             case R.id.action_preview:
-                SampleSchedulingService.PlayAlarm(this, RingDuration() * 1000);
+                AlarmSchedulingService.PlayAlarm(this, Settings.RingDuration() * 1000);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -123,11 +95,11 @@ public class MainActivity extends AppCompatActivity
                 if (isChecked)
                 {
                     SwitchControls(false);
-                    StartAlarm();
+                    _alarmReceiver.SetAlarms(MainActivity.this, Settings.Hours(), Settings.Minutes());
                 } else
                 {
                     SwitchControls(true);
-                    StopAlarm();
+                    StopAlarms();
                 }
 
                 Save();
@@ -137,7 +109,7 @@ public class MainActivity extends AppCompatActivity
 
     private void SetupNumberListeners()
     {
-        final SharedPreferences settings = getSharedPreferences("PREFERENCES", 0);
+        //final SharedPreferences settings = getSharedPreferences("PREFERENCES", 0);
 
         Map<EditText, String> editTexts = new HashMap<>();
         editTexts.put(_editRingCount, "ringCount");
@@ -147,9 +119,9 @@ public class MainActivity extends AppCompatActivity
         for (Object key : editTexts.keySet())
         {
             final EditText editText = (EditText) key;
-            String preferenceName = editTexts.get(key);
+            //String preferenceName = editTexts.get(key);
 
-            editText.setText(Integer.toString(settings.getInt(preferenceName, 0)));
+            //editText.setText(Integer.toString(settings.getInt(preferenceName, 0)));
 
             editText.addTextChangedListener(new TextWatcher()
             {
@@ -253,52 +225,30 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void StartAlarm()
+    private void StopAlarms()
     {
-        int currentMinutes = Minutes;
-        int currentSeconds = 0;
-
-        for (int i = 1; i <= RingCount(); i++)
-        {
-            alarm.SetAlarm(this, Hours, currentMinutes, currentSeconds, i);
-            currentSeconds += RingInterval() + RingDuration();
-
-            while (currentSeconds >= 60)
-            {
-                currentMinutes++;
-                currentSeconds -= 60;
-            }
-        }
-    }
-
-    private void StopAlarm()
-    {
-        alarm.CancelAlarm(this);
+        _alarmReceiver.CancelAlarms(this);
     }
 
     public void Load()
     {
-        SharedPreferences settings = getSharedPreferences("PREFERENCES", 0);
+        _chkEnable.setChecked(Settings.Enabled());
+        SwitchControls(!Settings.Enabled());
 
-        _chkEnable.setChecked(settings.getBoolean("enabled", false));
-        SwitchControls(!Enabled());
+        _txtAlarmTimeActual.setText(String.format("%1$02d:%2$02d", Settings.Hours(), Settings.Minutes()));
 
-        Hours = settings.getInt("hours", 3);
-        Minutes = settings.getInt("minutes", 0);
-        _txtAlarmTimeActual.setText(String.format("%1$02d:%2$02d", Hours, Minutes));
-
-        _txtCurrentAlarmSoundPath.setText(settings.getString("alarmSoundPath", "none"));
-        _editRingCount.setText(String.valueOf(settings.getInt("ringCount", 3)));
-        _editRingDuration.setText(String.valueOf(settings.getInt("ringDuration", 4)));
-        _editRingInterval.setText(String.valueOf(settings.getInt("ringInterval", 10)));
+        _txtCurrentAlarmSoundPath.setText(Settings.AlarmSoundPath());
+        _editRingCount.setText(String.valueOf(Settings.RingCount()));
+        _editRingDuration.setText(String.valueOf(Settings.RingDuration()));
+        _editRingInterval.setText(String.valueOf(Settings.RingInterval()));
 
         TextView txtAlarmPath = (TextView) findViewById(R.id.txtCurrentAlarmSoundPath);
-        String alarmPath = settings.getString("alarmPath", "");
+        String alarmPath = Settings.AlarmSoundPath();
 
         if (!new File(alarmPath).exists())
-            alarmPath = "";
+            alarmPath = "none";
 
-        txtAlarmPath.setText(alarmPath.equals("") ? "none" : alarmPath);
+        txtAlarmPath.setText(alarmPath);
     }
 
     public void Save()
@@ -306,16 +256,16 @@ public class MainActivity extends AppCompatActivity
         SharedPreferences settings = getSharedPreferences("PREFERENCES", 0);
         SharedPreferences.Editor editor = settings.edit();
 
-        editor.putBoolean("enabled", Enabled());
+        editor.putBoolean("enabled", _chkEnable.isChecked());
 
         String[] data = _txtAlarmTimeActual.getText().toString().split(":");
         editor.putInt("hours", Integer.parseInt(data[0]));
         editor.putInt("minutes", Integer.parseInt(data[1]));
 
-        editor.putString("alarmSoundPath", AlarmSoundPath());
-        editor.putInt("ringCount", RingCount());
-        editor.putInt("ringDuration", RingDuration());
-        editor.putInt("ringInterval", RingInterval());
+        editor.putString("alarmSoundPath", _txtCurrentAlarmSoundPath.getText().toString());
+        editor.putInt("ringCount", Integer.parseInt(_editRingCount.getText().toString()));
+        editor.putInt("ringDuration", Integer.parseInt(_editRingDuration.getText().toString()));
+        editor.putInt("ringInterval", Integer.parseInt(_editRingInterval.getText().toString()));
 
         editor.apply();
     }

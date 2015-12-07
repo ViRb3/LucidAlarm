@@ -24,16 +24,16 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".SampleAlarmReceiver" />
+        <receiver android:name=".AlarmReceiver" />
         <receiver
-            android:name=".SampleBootReceiver"
+            android:name=".AlarmBootReceiver"
             android:enabled="false" >
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 
-        <service android:name=".SampleSchedulingService" />
+        <service android:name=".AlarmSchedulingService" />
     </application>
 
 </manifest>

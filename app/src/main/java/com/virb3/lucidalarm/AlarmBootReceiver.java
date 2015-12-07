@@ -1,15 +1,13 @@
 package com.virb3.lucidalarm;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
-public class SampleBootReceiver extends BroadcastReceiver
+public class AlarmBootReceiver extends BroadcastReceiver
 {
-    SampleAlarmReceiver alarm = new SampleAlarmReceiver();
+    AlarmReceiver _alarmReceiver = new AlarmReceiver();
 
     @Override
     public void onReceive(Context context, Intent intent)
@@ -27,19 +25,6 @@ public class SampleBootReceiver extends BroadcastReceiver
         if (hours == -1 || minutes == -1 || setAlarms == -1 || interval == -1 || ringDuration == -1)
             return;
 
-        int currentMinutes = minutes;
-        int currentSeconds = 0;
-
-        for(int i = 1; i <= setAlarms; i++)
-        {
-            alarm.SetAlarm(context, hours, currentMinutes, currentSeconds, i);
-            currentSeconds += interval + ringDuration;
-
-            while (currentSeconds >= 60)
-            {
-                currentMinutes++;
-                currentSeconds -= 60;
-            }
-        }
+        _alarmReceiver.SetAlarms(context, hours, minutes);
     }
 }

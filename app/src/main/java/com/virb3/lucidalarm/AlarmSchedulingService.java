@@ -11,40 +11,42 @@ import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Timer;
 
-public class SampleSchedulingService extends IntentService {
-    public SampleSchedulingService() {
+public class AlarmSchedulingService extends IntentService {
+    public AlarmSchedulingService() {
         super("SchedulingService");
     }
 
     // An ID used to post the notification.
     public static final int NOTIFICATION_ID = 1;
 
-    private NotificationManager mNotificationManager;
-    NotificationCompat.Builder mBuilder;
+    private NotificationManager _notificationManager;
+    private NotificationCompat.Builder _builder;
 
-    SampleAlarmReceiver alarm = new SampleAlarmReceiver();
     public static MediaPlayer MediaPlayer;
 
     @Override
-    protected void onHandleIntent(Intent intent) {
+    protected void onHandleIntent(Intent intent)
+    {
+        Settings.Initialize(this);
         sendNotification("WAKE UP");
 
         // Release the wake lock provided by the BroadcastReceiver.
-        SampleAlarmReceiver.completeWakefulIntent(intent);
+        AlarmReceiver.completeWakefulIntent(intent);
     }
 
     private void sendNotification(String msg)
     {
-        mNotificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+        _notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
 
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
 
-        mBuilder = new NotificationCompat.Builder(this)
+        _builder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Lucid Alarm")
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -52,21 +54,35 @@ public class SampleSchedulingService extends IntentService {
                 .setContentText(msg)
                 .setAutoCancel(true);
 
-        mBuilder.setContentIntent(contentIntent);
-        mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+        _builder.setContentIntent(contentIntent);
+        _notificationManager.notify(NOTIFICATION_ID, _builder.build());
 
-        SharedPreferences settings = getApplicationContext().getSharedPreferences("PREFERENCES", 0);
-        PlayAlarm(this, settings.getInt("ringDuration", 4) * 1000);
+        PlayAlarm(this, Settings.RingDuration() * 1000);
 
-        //TODO: Re-create alarm
+        SharedPreferences settings = this.getSharedPreferences("PREFERENCES", 0);
+        SharedPreferences.Editor editor = settings.edit();
+
+        int completedAlarms = Settings.CompletedAlarms() + 1;
+
+        // last alarm, reset alarms
+        if (completedAlarms == Settings.RingCount())
+        {
+            editor.putInt("completedAlarms", 0);
+
+            AlarmReceiver alarmReceiver = new AlarmReceiver();
+            alarmReceiver.SetAlarms(this, Settings.Hours(), Settings.Minutes());
+        }
+        else
+            editor.putInt("completedAlarms", completedAlarms);
+
+        editor.apply();
     }
 
     public static void PlayAlarm(Context context, int duration)
     {
-        SharedPreferences settings = context.getSharedPreferences("PREFERENCES", 0);
-        String alarmPath = settings.getString("alarmPath", "");
+        String alarmPath = Settings.AlarmSoundPath();
 
-        if (!new File(alarmPath).exists())
+        if (alarmPath.equals("none") || !new File(alarmPath).exists())
             alarmPath = "";
 
         Uri alarm = alarmPath.equals("") ? RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) :
@@ -96,7 +112,7 @@ public class SampleSchedulingService extends IntentService {
         MediaPlayer.start();
 
         Muter muter = new Muter();
-        Timer myTimer = new Timer();
-        myTimer.schedule(muter, duration);
+        Timer timer = new Timer();
+        timer.schedule(muter, duration);
     }
 }

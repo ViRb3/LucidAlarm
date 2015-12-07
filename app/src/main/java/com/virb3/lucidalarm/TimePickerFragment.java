@@ -9,19 +9,25 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 
 
-public class TimePickerFragment extends DialogFragment
-        implements TimePickerDialog.OnTimeSetListener {
+public class TimePickerFragment extends DialogFragment implements TimePickerDialog.OnTimeSetListener
+{
 
     @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        MainActivity activity = (MainActivity) getActivity();
-        return new TimePickerDialog(getActivity(), this, activity.Hours, activity.Minutes, true);
+    public Dialog onCreateDialog(Bundle savedInstanceState)
+    {
+        return new TimePickerDialog(getActivity(), this, Settings.Hours(), Settings.Minutes(), true);
     }
 
-    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+    public void onTimeSet(TimePicker view, int hourOfDay, int minute)
+    {
+        SharedPreferences settings = getActivity().getSharedPreferences("PREFERENCES", 0);
+        SharedPreferences.Editor editor = settings.edit();
+
         MainActivity activity = (MainActivity) getActivity();
-        activity.Hours = hourOfDay;
-        activity.Minutes = minute;
+        editor.putInt("hours", hourOfDay);
+        editor.putInt("minutes", minute);
+
+        editor.commit();
 
         TextView txtAlarmTimeActual = (TextView) activity.findViewById(R.id.txtAlarmTimeActual);
         txtAlarmTimeActual.setText(String.format("%1$02d:%2$02d", hourOfDay, minute));

@@ -10,22 +10,38 @@ import android.content.pm.PackageManager;
 import android.support.v4.content.WakefulBroadcastReceiver;
 
 import java.util.Calendar;
-import java.util.Date;
 
-public class SampleAlarmReceiver extends WakefulBroadcastReceiver
+public class AlarmReceiver extends WakefulBroadcastReceiver
 {
     @Override
     public void onReceive(Context context, Intent intent)
     {
-        Intent service = new Intent(context, SampleSchedulingService.class);
+        Intent service = new Intent(context, AlarmSchedulingService.class);
 
         // Start the service, keeping the device awake while it is launching.
         startWakefulService(context, service);
     }
 
+    public void SetAlarms(Context context, int hours, int minutes)
+    {
+        int currentSeconds = 0;
+
+        for (int i = 1; i <= Settings.RingCount(); i++)
+        {
+            SetAlarm(context, hours, minutes, currentSeconds, i);
+            currentSeconds += Settings.RingInterval() + Settings.RingDuration();
+
+            while (currentSeconds >= 60)
+            {
+                minutes++;
+                currentSeconds -= 60;
+            }
+        }
+    }
+
     public void SetAlarm(Context context, int hours, int minutes, int seconds, int id) {
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(context, SampleAlarmReceiver.class);
+        Intent intent = new Intent(context, AlarmReceiver.class);
         PendingIntent alarmIntent = PendingIntent.getBroadcast(context, id, intent, 0);
 
         Calendar calendar = Calendar.getInstance();
@@ -39,9 +55,9 @@ public class SampleAlarmReceiver extends WakefulBroadcastReceiver
 
         alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), alarmIntent);
 
-        // Enable {@code SampleBootReceiver} to automatically restart the alarm when the
+        // Enable {@code AlarmBootReceiver} to automatically restart the alarm when the
         // device is rebooted.
-        ComponentName receiver = new ComponentName(context, SampleBootReceiver.class);
+        ComponentName receiver = new ComponentName(context, AlarmBootReceiver.class);
         PackageManager pm = context.getPackageManager();
 
         pm.setComponentEnabledSetting(receiver,
@@ -49,26 +65,25 @@ public class SampleAlarmReceiver extends WakefulBroadcastReceiver
                 PackageManager.DONT_KILL_APP);
     }
 
-    public void CancelAlarm(Context context) {
+    public void CancelAlarms(Context context) {
 
-        SharedPreferences settings = context.getSharedPreferences("PREFERENCES", 0);
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
 
-        int setAlarms = settings.getInt("ringCount", -1);
+        int setAlarms = Settings.RingCount();
 
         if (setAlarms == -1)
             return;
 
         for(int i = 1; i <= setAlarms; i++)
         {
-            Intent intent = new Intent(context, SampleAlarmReceiver.class);
+            Intent intent = new Intent(context, AlarmReceiver.class);
             PendingIntent alarmIntent = PendingIntent.getBroadcast(context, i, intent, 0);
             alarmManager.cancel(alarmIntent);
         }
 
-        // Disable {@code SampleBootReceiver} so that it doesn't automatically restart the 
+        // Disable {@code AlarmBootReceiver} so that it doesn't automatically restart the
         // alarm when the device is rebooted.
-        ComponentName receiver = new ComponentName(context, SampleBootReceiver.class);
+        ComponentName receiver = new ComponentName(context, AlarmBootReceiver.class);
         PackageManager pm = context.getPackageManager();
 
         pm.setComponentEnabledSetting(receiver,
