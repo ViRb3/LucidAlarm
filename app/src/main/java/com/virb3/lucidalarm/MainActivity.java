@@ -87,17 +87,13 @@ public class MainActivity extends AppCompatActivity
 
     private void SetupEnableCheckbox()
     {
-        _chkEnable.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
-        {
+        _chkEnable.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-            {
-                if (isChecked)
-                {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
                     SwitchControls(false);
                     _alarmReceiver.SetAlarms(MainActivity.this, Settings.Hours(), Settings.Minutes());
-                } else
-                {
+                } else {
                     SwitchControls(true);
                     StopAlarms();
                 }
@@ -109,8 +105,6 @@ public class MainActivity extends AppCompatActivity
 
     private void SetupNumberListeners()
     {
-        //final SharedPreferences settings = getSharedPreferences("PREFERENCES", 0);
-
         Map<EditText, String> editTexts = new HashMap<>();
         editTexts.put(_editRingCount, "ringCount");
         editTexts.put(_editRingDuration, "ringDuration");
@@ -119,26 +113,12 @@ public class MainActivity extends AppCompatActivity
         for (Object key : editTexts.keySet())
         {
             final EditText editText = (EditText) key;
-            //String preferenceName = editTexts.get(key);
 
-            //editText.setText(Integer.toString(settings.getInt(preferenceName, 0)));
-
-            editText.addTextChangedListener(new TextWatcher()
-            {
+            editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                 @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after)
+                public void onFocusChange(View v, boolean hasFocus)
                 {
-                }
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count)
-                {
-                }
-
-                @Override
-                public void afterTextChanged(Editable s)
-                {
-                    if (s.toString().equals(""))
+                    if (!hasFocus && editText.getText().toString().equals(""))
                         editText.setText("0");
 
                     Save();
