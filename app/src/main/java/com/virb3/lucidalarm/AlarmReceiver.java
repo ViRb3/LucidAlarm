@@ -5,7 +5,6 @@ import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.v4.content.WakefulBroadcastReceiver;
@@ -40,8 +39,9 @@ public class AlarmReceiver extends WakefulBroadcastReceiver
         }
     }
 
-    public void SetAlarm(Context context, int hours, int minutes, int seconds, int id) {
-        AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+    public void SetAlarm(Context context, int hours, int minutes, int seconds, int id)
+    {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, AlarmReceiver.class);
         PendingIntent alarmIntent = PendingIntent.getBroadcast(context, id, intent, 0);
 
@@ -56,8 +56,11 @@ public class AlarmReceiver extends WakefulBroadcastReceiver
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), alarmIntent);
-        else
+        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+        {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), alarmIntent);
+        } else
+            alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), alarmIntent);
 
         // Enable {@code AlarmBootReceiver} to automatically restart the alarm when the
         // device is rebooted.
@@ -69,16 +72,17 @@ public class AlarmReceiver extends WakefulBroadcastReceiver
                 PackageManager.DONT_KILL_APP);
     }
 
-    public void CancelAlarms(Context context) {
+    public void CancelAlarms(Context context)
+    {
 
-        AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
         int setAlarms = Settings.RingCount();
 
         if (setAlarms == -1)
             return;
 
-        for(int i = 1; i <= setAlarms; i++)
+        for (int i = 1; i <= setAlarms; i++)
         {
             Intent intent = new Intent(context, AlarmReceiver.class);
             PendingIntent alarmIntent = PendingIntent.getBroadcast(context, i, intent, 0);

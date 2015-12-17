@@ -97,7 +97,7 @@ public class DialogChooseDirectory implements AdapterView.OnItemClickListener, D
         if (startDirectory != null)
             _currentDirectory = new File(startDirectory);
         else
-            _currentDirectory =  Environment.getExternalStorageDirectory();
+            _currentDirectory = Environment.getExternalStorageDirectory();
 
         ListDirectories();
         DirAdapter adapter = new DirAdapter(R.layout.listitem_row_textview);

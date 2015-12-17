@@ -9,12 +9,10 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.view.MenuInflater;
-import android.view.View;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -77,7 +75,7 @@ public class MainActivity extends AppCompatActivity
         switch (item.getItemId())
         {
             case R.id.action_preview:
-                AlarmSchedulingService.PlayAlarm(this, Settings.RingDuration() * 1000);
+                AlarmPlayer.Play(this, Settings.RingDuration() * 1000);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -87,13 +85,17 @@ public class MainActivity extends AppCompatActivity
 
     private void SetupEnableCheckbox()
     {
-        _chkEnable.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        _chkEnable.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
+        {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+            {
+                if (isChecked)
+                {
                     SwitchControls(false);
                     _alarmReceiver.SetAlarms(MainActivity.this, Settings.Hours(), Settings.Minutes());
-                } else {
+                } else
+                {
                     SwitchControls(true);
                     StopAlarms();
                 }
@@ -114,7 +116,8 @@ public class MainActivity extends AppCompatActivity
         {
             final EditText editText = (EditText) key;
 
-            editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            editText.setOnFocusChangeListener(new View.OnFocusChangeListener()
+            {
                 @Override
                 public void onFocusChange(View v, boolean hasFocus)
                 {
@@ -170,7 +173,7 @@ public class MainActivity extends AppCompatActivity
                         SharedPreferences settings = getSharedPreferences("PREFERENCES", 0);
                         SharedPreferences.Editor editor = settings.edit();
 
-                        editor.putString("alarmPath", file.getPath());
+                        editor.putString("alarmSoundPath", file.getPath());
                         editor.apply();
 
                         TextView alarmPath = (TextView) findViewById(R.id.txtCurrentAlarmSoundPath);

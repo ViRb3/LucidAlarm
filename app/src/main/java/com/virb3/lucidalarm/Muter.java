@@ -6,14 +6,11 @@ class Muter extends TimerTask
 {
     public void run()
     {
-        if(AlarmSchedulingService.MediaPlayer == null)
+        if (AlarmPlayer.MediaPlayer == null)
             return;
 
-        if(AlarmSchedulingService.MediaPlayer.isPlaying())
-            AlarmSchedulingService.MediaPlayer.stop();
-
-        AlarmSchedulingService.MediaPlayer.reset();
-        AlarmSchedulingService.MediaPlayer.release();
-        AlarmSchedulingService.MediaPlayer = null;
-}
+        AlarmPlayer.MediaPlayer.stop();
+        AlarmPlayer.MediaPlayer.release();
+        AlarmPlayer.MediaPlayer = null;
+    }
 }
