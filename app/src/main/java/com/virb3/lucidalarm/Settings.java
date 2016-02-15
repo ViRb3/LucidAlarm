@@ -52,4 +52,12 @@ public final class Settings
     {
         return Settings.getInt("completedAlarms", 0);
     }
+
+    public static void SaveString(String key, String value)
+    {
+        SharedPreferences.Editor editor = Settings.edit();
+
+        editor.putString(key, value);
+        editor.apply();
+    }
 }

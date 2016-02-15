@@ -2,9 +2,14 @@ package com.virb3.lucidalarm;
 
 import android.Manifest;
 import android.app.DialogFragment;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -53,7 +58,7 @@ public class MainActivity extends AppCompatActivity
 
         Settings.Initialize(this);
 
-        Load();
+        LoadSettings();
 
         SetupEnableCheckbox();
         SetupNumberListeners();
@@ -92,9 +97,28 @@ public class MainActivity extends AppCompatActivity
             {
                 if (isChecked)
                 {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                    {
+                        Intent intent = new Intent();
+                        String packageName = getApplicationContext().getPackageName();
+                        PowerManager pm = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
+
+                        if (!pm.isIgnoringBatteryOptimizations(packageName))
+                        {
+                            buttonView.setChecked(false);
+
+                            intent.setAction(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                            intent.setData(Uri.parse("package:" + packageName));
+                            startActivity(intent);
+
+                            return;
+                        }
+                    }
+
                     SwitchControls(false);
                     _alarmReceiver.SetAlarms(MainActivity.this, Settings.Hours(), Settings.Minutes());
-                } else
+                }
+                else
                 {
                     SwitchControls(true);
                     StopAlarms();
@@ -166,15 +190,10 @@ public class MainActivity extends AppCompatActivity
 
                 DialogChooseDirectory.Result result = new DialogChooseDirectory.Result()
                 {
-
                     @Override
                     public void onChooseFile(File file)
                     {
-                        SharedPreferences settings = getSharedPreferences("PREFERENCES", 0);
-                        SharedPreferences.Editor editor = settings.edit();
-
-                        editor.putString("alarmSoundPath", file.getPath());
-                        editor.apply();
+                        Settings.SaveString("alarmSoundPath", file.getPath());
 
                         TextView alarmPath = (TextView) findViewById(R.id.txtCurrentAlarmSoundPath);
                         alarmPath.setText(file.getPath());
@@ -213,7 +232,7 @@ public class MainActivity extends AppCompatActivity
         _alarmReceiver.CancelAlarms(this);
     }
 
-    public void Load()
+    public void LoadSettings()
     {
         _chkEnable.setChecked(Settings.Enabled());
         SwitchControls(!Settings.Enabled());
